@@ -29,6 +29,9 @@ final class AboutTableViewCell: UITableViewCell {
   private var section: Section?
   private var parentSection: Section?
 
+  var isFirstInSection: Bool = false
+  var isLastInSection: Bool = false
+
   func setTableView() {
     if DeviceType.isPad {
       titleLabel = titleLabelPad
@@ -89,5 +92,31 @@ final class AboutTableViewCell: UITableViewCell {
       accessory.tintColor = menuOptionColor
       accessoryView = accessory
     }
+  }
+
+  override func layoutSubviews() {
+    super.layoutSubviews()
+
+    let cornerRadius: CGFloat = 12
+
+    if isFirstInSection && isLastInSection {
+      // Single cell - all corners
+      self.setFixedCornerRadius(cornerRadius)
+      self.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner,
+                                   .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+    } else if isFirstInSection {
+      // First cell - top corners only
+      self.setFixedCornerRadius(cornerRadius)
+      self.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+    } else if isLastInSection {
+      // Last cell - bottom corners only
+      self.setFixedCornerRadius(cornerRadius)
+      self.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+    } else {
+      // Middle cells - no corners
+      self.setFixedCornerRadius(0)
+    }
+
+    self.layer.masksToBounds = true
   }
 }

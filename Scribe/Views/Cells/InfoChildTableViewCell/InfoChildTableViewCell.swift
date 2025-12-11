@@ -190,4 +190,9 @@ final class InfoChildTableViewCell: UITableViewCell {
     case .none: break
     }
   }
+
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    self.setFixedCornerRadius(12)
+  }
 }

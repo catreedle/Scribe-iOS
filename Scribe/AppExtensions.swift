@@ -43,6 +43,15 @@ extension UIView {
 
     return nil
   }
+
+  func setFixedCornerRadius(_ radius: CGFloat) {
+    if #available(iOS 26.0, *) {
+      cornerConfiguration = .corners(radius: .fixed(radius))
+    } else {
+      layer.cornerRadius = radius
+      layer.masksToBounds = true
+    }
+  }
 }
 
 extension Locale {

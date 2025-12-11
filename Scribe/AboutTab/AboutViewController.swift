@@ -53,7 +53,12 @@ extension AboutViewController {
     ) as? AboutTableViewCell else {
       fatalError("Failed to dequeue AboutTableViewCell.")
     }
-    cell.configureCell(for: dataSet[indexPath.section].section[indexPath.row])
+
+    let sectionData = dataSet[indexPath.section].section
+    cell.isFirstInSection = (indexPath.row == 0)
+    cell.isLastInSection = (indexPath.row == sectionData.count - 1)
+
+    cell.configureCell(for: sectionData[indexPath.row])
     cell.backgroundColor = lightWhiteDarkBlackColor
 
     return cell
