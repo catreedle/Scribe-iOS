@@ -40,6 +40,11 @@ class InstallationVC: UIViewController {
 
   @IBOutlet var installationHeaderLabel: UILabel!
 
+  // Table view for language data section
+  private var languageDataTableView: UITableView!
+  private var languageDataLabel: UILabel!
+  private let dataSet = InstallationTableData.installationTableData
+
   private let installationTipCardState: Bool = {
     let userDefault = UserDefaults.standard
     let state = userDefault.object(forKey: "installationTipCardState") as? Bool ?? true
@@ -92,6 +97,7 @@ class InstallationVC: UIViewController {
 
     setCurrentUI()
     showTipCardView()
+    setupLanguageDataSection()
   }
 
   /// Includes a call to checkDarkModeSetColors to set brand colors and a call to set the UI for the app screen.
@@ -124,6 +130,54 @@ class InstallationVC: UIViewController {
     get { return orientations }
     set { orientations = newValue }
   }
+
+/// Sets up the "Language data" section with table view
+func setupLanguageDataSection() {
+  guard appTextBackground != nil, dataSet.count > 0 else { return }
+
+  if languageDataTableView != nil { return }
+
+  // Add "Language data" label
+  languageDataLabel = UILabel()
+  languageDataLabel.translatesAutoresizingMaskIntoConstraints = false
+  languageDataLabel.text = dataSet[0].headingTitle
+  languageDataLabel.font = UIFont.boldSystemFont(ofSize: fontSize * 1.1)
+  languageDataLabel.textColor = keyCharColor
+
+  // Insert AT POSITION 0
+  view.insertSubview(languageDataLabel, at: 0)
+
+  // Add table view
+  languageDataTableView = UITableView(frame: .zero, style: .plain)
+  languageDataTableView.translatesAutoresizingMaskIntoConstraints = false
+  languageDataTableView.backgroundColor = .clear
+  languageDataTableView.separatorStyle = .none
+  languageDataTableView.isScrollEnabled = false
+  languageDataTableView.delegate = self
+  languageDataTableView.dataSource = self
+
+  languageDataTableView.register(
+    UINib(nibName: "InfoChildTableViewCell", bundle: nil),
+    forCellReuseIdentifier: InfoChildTableViewCell.reuseIdentifier
+  )
+
+  // Insert AT POSITION 0
+  view.insertSubview(languageDataTableView, at: 0)
+
+  // Layout constraints
+  NSLayoutConstraint.activate([
+    // Language data label
+    languageDataLabel.topAnchor.constraint(equalTo: appTextBackground.bottomAnchor, constant: 30),
+    languageDataLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 15),
+    languageDataLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -15),
+
+    // Table view
+    languageDataTableView.topAnchor.constraint(equalTo: languageDataLabel.bottomAnchor, constant: 10),
+    languageDataTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 15),
+    languageDataTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -15),
+    languageDataTableView.heightAnchor.constraint(equalToConstant: 100)
+  ])
+}
 
   /// Sets the top icon for the app screen given the device to assure that it's oriented correctly to its background.
   func setTopIcon() {
@@ -274,6 +328,54 @@ class InstallationVC: UIViewController {
   }
 }
 
+// MARK: UITableViewDataSource
+
+extension InstallationVC: UITableViewDataSource {
+  func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    return dataSet.count > 0 ? dataSet[0].section.count : 0
+  }
+
+  func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    guard let cell = tableView.dequeueReusableCell(
+      withIdentifier: InfoChildTableViewCell.reuseIdentifier,
+      for: indexPath
+    ) as? InfoChildTableViewCell else {
+      fatalError("Failed to dequeue InfoChildTableViewCell.")
+    }
+
+    cell.configureCell(for: dataSet[0].section[indexPath.row])
+    cell.backgroundColor = lightWhiteDarkBlackColor
+
+    // Add corner radius to both cell and contentView
+    cell.contentView.layer.cornerRadius = 12
+    cell.contentView.layer.masksToBounds = true
+    cell.layer.cornerRadius = 12
+    cell.layer.masksToBounds = true
+
+    return cell
+  }
+}
+
+// MARK: UITableViewDelegate
+
+extension InstallationVC: UITableViewDelegate {
+  func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    let section = dataSet[indexPath.section].section[indexPath.row]
+
+    switch section.sectionState {
+    case .downloadData:
+        let viewController = DownloadDataViewController()
+        viewController.configureTable(for: DownloadDataTable.downloadDataTable)
+        navigationController?.pushViewController(viewController, animated: true)
+
+    default:
+      break
+    }
+
+    tableView.deselectRow(at: indexPath, animated: true)
+  }
+}
+
 // MARK: TipHintView
 
 extension InstallationVC {
@@ -283,7 +385,6 @@ extension InstallationVC {
     )
 
     let hostingController = UIHostingController(rootView: overlayView)
-    hostingController.view.frame = CGRect(x: 0, y: 0, width: self.view.bounds.width, height: 178)
     hostingController.view.backgroundColor = .clear
 
     if !UIDevice.hasNotch {
@@ -295,14 +396,23 @@ extension InstallationVC {
       NSLayoutConstraint.activate([
         hostingController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 30),
         hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-        hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        hostingController.view.heightAnchor.constraint(equalToConstant: 178)
       ])
 
     } else {
+      // DEVICE WITH NOTCH
       startGlowingEffect(on: hostingController.view)
       addChild(hostingController)
       view.addSubview(hostingController.view)
+      hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
+      NSLayoutConstraint.activate([
+        hostingController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
+        hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 15),
+        hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -15),
+        hostingController.view.heightAnchor.constraint(equalToConstant: 178)
+      ])
     }
     hostingController.didMove(toParent: self)
   }
