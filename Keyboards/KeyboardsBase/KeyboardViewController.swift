@@ -1259,13 +1259,7 @@ class KeyboardViewController: UIInputViewController {
     swipeLeft.direction = .left
     keyboardView.addGestureRecognizer(swipeLeft)
 
-    // Set the conjugation view to 2x2 for Swedish and Russian past tense.
-    if controllerLanguage == "Swedish" {
-      formsDisplayDimensions = .view2x2
-    } else if controllerLanguage == "Russian" && ruConjugationState == .past {
-      formsDisplayDimensions = .view2x2
-    } else if
-      commandState == .selectCaseDeclension
+    if commandState == .selectCaseDeclension
       && controllerLanguage == "German"
       && deCaseVariantDeclensionState != .disabled {
       switch deCaseVariantDeclensionState {
@@ -1297,15 +1291,6 @@ class KeyboardViewController: UIInputViewController {
         .genitiveDefinite, .genitiveIndefinite, .genitiveDemonstrative
       ].contains(deCaseDeclensionState) {
       formsDisplayDimensions = .view2x2
-    } else if controllerLanguage == "English" {
-      switch enConjugationState {
-      case .present, .presCont, .past, .future, .conditional:
-        formsDisplayDimensions = .view2x2
-      case .presSimp, .presPerf, .presPerfCont:
-        formsDisplayDimensions = .view1x2
-      case .pastCont:
-        formsDisplayDimensions = .view3x1
-      }
     } else if commandState == .displayInformation {
       formsDisplayDimensions = .view1x1
     } else {
@@ -1455,162 +1440,6 @@ class KeyboardViewController: UIInputViewController {
 
     for lbl in allFormDisplayLabels {
       lbl.setTitle("", for: .normal)
-    }
-  }
-
-  /// Assign the verb conjugations that will be selectable in the conjugation display.
-  func assignVerbConjStates() {
-    var conjugationStateFxn: () -> String = deGetConjugationState
-    if let conjugationFxn = keyboardConjStateDict[controllerLanguage] as? () -> String {
-      conjugationStateFxn = conjugationFxn
-    }
-
-    if !["English", "Russian", "Swedish"].contains(controllerLanguage) {
-      formFPS = conjugationStateFxn() + "FPS"
-      formSPS = conjugationStateFxn() + "SPS"
-      formTPS = conjugationStateFxn() + "TPS"
-      formFPP = conjugationStateFxn() + "FPP"
-      formSPP = conjugationStateFxn() + "SPP"
-      formTPP = conjugationStateFxn() + "TPP"
-    } else if controllerLanguage == "Russian" {
-      if formsDisplayDimensions == .view3x2 {
-        formFPS = ruGetConjugationState() + "FPS"
-        formSPS = ruGetConjugationState() + "SPS"
-        formTPS = ruGetConjugationState() + "TPS"
-        formFPP = ruGetConjugationState() + "FPP"
-        formSPP = ruGetConjugationState() + "SPP"
-        formTPP = ruGetConjugationState() + "TPP"
-      } else {
-        formTopLeft = "pastMasculine"
-        formTopRight = "pastFeminine"
-        formBottomLeft = "pastNeutral"
-        formBottomRight = "pastPlural"
-      }
-    } else if controllerLanguage == "Swedish" {
-      let svTenses = svGetConjugationState()
-
-      formTopLeft = svTenses[0]
-      formTopRight = svTenses[1]
-      formBottomLeft = svTenses[2]
-      formBottomRight = svTenses[3]
-    } else if controllerLanguage == "English" {
-      if formsDisplayDimensions == .view2x2 {
-        let enTenses = enGetConjugationState()
-
-        formTopLeft = enTenses[0]
-        formTopRight = enTenses[1]
-        formBottomLeft = enTenses[2]
-        formBottomRight = enTenses[3]
-      } else if formsDisplayDimensions == .view1x2 {
-        let enTenses = enGetConjugationState()
-
-        formLeft = enTenses[0]
-        formRight = enTenses[1]
-      } else if formsDisplayDimensions == .view3x1 {
-        formTop = "presPart"
-        formMiddle = "pastSimpCont"
-        formBottom = "pastSimpPluralCont"
-      }
-    }
-  }
-
-  /// Sets the label of the conjugation state and assigns the current tenses that are accessed to label the buttons.
-  func setVerbConjugationState() {
-    // Assign the conjugations that will be selectable.
-    assignVerbConjStates()
-
-    // Set the view title and its labels.
-    var conjugationTitleFxn: () -> String = deGetConjugationTitle
-    var conjugationLabelsFxn: () -> Void = deSetConjugationLabels
-    if let titleFxn = keyboardConjTitleDict[controllerLanguage] as? () -> String {
-      conjugationTitleFxn = titleFxn
-    }
-    if let labelsFxn = keyboardConjLabelDict[controllerLanguage] as? () -> Void {
-      conjugationLabelsFxn = labelsFxn
-    }
-
-    if !["Russian", "Swedish"].contains(controllerLanguage) {
-      commandBar.text = conjugationTitleFxn()
-      conjugationLabelsFxn()
-    } else if controllerLanguage == "Russian" {
-      commandBar.text = ruGetConjugationTitle()
-      ruSetConjugationLabels()
-    } else if controllerLanguage == "Swedish" {
-      commandBar.text = svGetConjugationTitle()
-      svSetConjugationLabels()
-    }
-
-    // Assign labels that have been set by SetConjugationLabels function.
-    formLblFPS.setTitle("  " + (formLabelsDict["FPS"] ?? ""), for: .normal)
-    formLblSPS.setTitle("  " + (formLabelsDict["SPS"] ?? ""), for: .normal)
-    formLblTPS.setTitle("  " + (formLabelsDict["TPS"] ?? ""), for: .normal)
-    formLblFPP.setTitle("  " + (formLabelsDict["FPP"] ?? ""), for: .normal)
-    formLblSPP.setTitle("  " + (formLabelsDict["SPP"] ?? ""), for: .normal)
-    formLblTPP.setTitle("  " + (formLabelsDict["TPP"] ?? ""), for: .normal)
-
-    formLblTop.setTitle("  " + (formLabelsDict["Top"] ?? ""), for: .normal)
-    formLblMiddle.setTitle("  " + (formLabelsDict["Middle"] ?? ""), for: .normal)
-    formLblBottom.setTitle("  " + (formLabelsDict["Bottom"] ?? ""), for: .normal)
-
-    formLblTL.setTitle("  " + (formLabelsDict["TL"] ?? ""), for: .normal)
-    formLblTR.setTitle("  " + (formLabelsDict["TR"] ?? ""), for: .normal)
-    formLblBL.setTitle("  " + (formLabelsDict["BL"] ?? ""), for: .normal)
-    formLblBR.setTitle("  " + (formLabelsDict["BR"] ?? ""), for: .normal)
-
-    formLblLeft.setTitle("  " + (formLabelsDict["Left"] ?? ""), for: .normal)
-    formLblRight.setTitle("  " + (formLabelsDict["Right"] ?? ""), for: .normal)
-
-    switch formsDisplayDimensions {
-    case .view3x2:
-      allConjugations = [formFPS, formSPS, formTPS, formFPP, formSPP, formTPP]
-      allConjugationBtns = get3x2FormDisplayButtons()
-    case .view3x1:
-      allConjugations = [formTop, formMiddle, formBottom]
-      allConjugationBtns = get3x1FormDisplayButtons()
-    case .view2x2:
-      allConjugations = [formTopLeft, formTopRight, formBottomLeft, formBottomRight]
-      allConjugationBtns = get2x2FormDisplayButtons()
-    case .view1x2:
-      allConjugations = [formLeft, formRight]
-      allConjugationBtns = get1x2FormDisplayButtons()
-    case .view1x1:
-      break
-    }
-
-    // Populate conjugation view buttons.
-    let outputCols = allConjugations
-    let conjugationsToDisplay = LanguageDBManager.shared.queryVerb(of: verbToConjugate, with: outputCols)
-    for index in 0 ..< allConjugations.count {
-      if conjugationsToDisplay[index] == "" {
-        // Assign the invalid message if the conjugation isn't present in the directory.
-        styleBtn(btn: allConjugationBtns[index], title: invalidCommandMsg, radius: keyCornerRadius)
-      } else {
-        conjugationToDisplay = conjugationsToDisplay[index]
-        if controllerLanguage == "English" {
-          if index == 0 && allConjugations[index] == "presTPS" {
-            let simple = LanguageDBManager.shared.queryVerb(of: verbToConjugate, with: ["presSimp"])
-            conjugationToDisplay = simple[0] + "/" + conjugationToDisplay
-          } else if index == 1 && allConjugations[index] == "presPart" {
-            if enConjugationState == .present {
-              conjugationToDisplay = "am/are/is " + conjugationToDisplay
-            } else {
-              conjugationToDisplay = "was/were " + conjugationToDisplay
-            }
-          } else if index == 2 && allConjugations[index] == "presPerfTPS" {
-            conjugationToDisplay = "have/" + conjugationToDisplay
-          } else if index == 3 && allConjugations[index] == "presPerfTPSCont" {
-            conjugationToDisplay = "have/" + conjugationToDisplay
-          }
-        }
-        if inputWordIsCapitalized {
-          if controllerLanguage == "English", conjugationToDisplay.count(of: " ") > 0 {
-            conjugationToDisplay = conjugationToDisplay.capitalize()
-          } else if deConjugationState != .indicativePerfect {
-            conjugationToDisplay = conjugationToDisplay.capitalized
-          }
-        }
-        styleBtn(btn: allConjugationBtns[index], title: conjugationToDisplay, radius: keyCornerRadius)
-      }
     }
   }
 
@@ -2129,7 +1958,7 @@ class KeyboardViewController: UIInputViewController {
     }
 
     if ![
-      .selectVerbConjugation, .selectCaseDeclension, .displayInformation
+      .selectCaseDeclension, .displayInformation
     ].contains(commandState) { // normal keyboard view
       for view in [stackViewNum, stackView0, stackView1, stackView2, stackView3] {
         view?.isUserInteractionEnabled = true
@@ -2277,9 +2106,7 @@ class KeyboardViewController: UIInputViewController {
                    color: ![.bothInactive, .rightInactive].contains(conjViewShiftButtonsState) ? keyCharColor : commandBarPlaceholderColor,
                    iconName: "chevron.right")
 
-      if commandState == .selectVerbConjugation {
-        setVerbConjugationState()
-      } else if commandState == .displayInformation {
+      if commandState == .displayInformation {
         deactivateConjugationDisplay(deactivateShiftForms: false) // Ensures that previously displayed buttons disappear before showing the info view
         setInformationState()
       } else {
@@ -2369,7 +2196,6 @@ class KeyboardViewController: UIInputViewController {
     case "Scribe":
       if [.translate,
           .conjugate,
-          .selectVerbConjugation,
           .selectCaseDeclension,
           .plural,
           .dynamicConjugation].contains(commandState) { // escape
@@ -2409,10 +2235,8 @@ class KeyboardViewController: UIInputViewController {
       } else if commandState == .translate {
         queryTranslation(commandBar: commandBar)
       } else if commandState == .conjugate {
-        resetVerbConjugationState()
         let conjugationTblTriggered = triggerVerbConjugation(commandBar: commandBar)
         if conjugationTblTriggered {
-        //   commandState = .selectVerbConjugation
         //   loadKeys() // go to conjugation view
           commandState = .dynamicConjugation
           showDynamicConjugationView(verb: verbToConjugate)
@@ -2548,93 +2372,6 @@ class KeyboardViewController: UIInputViewController {
 
     case "shiftFormsDisplayRight":
       shiftRight()
-
-    case "firstPersonSingular":
-      returnConjugation(keyPressed: sender, requestedForm: formFPS)
-      loadKeys()
-
-    case "secondPersonSingular":
-      returnConjugation(keyPressed: sender, requestedForm: formSPS)
-      loadKeys()
-
-    case "thirdPersonSingular":
-      returnConjugation(keyPressed: sender, requestedForm: formTPS)
-      loadKeys()
-
-    case "firstPersonPlural":
-      returnConjugation(keyPressed: sender, requestedForm: formFPP)
-      loadKeys()
-
-    case "secondPersonPlural":
-      returnConjugation(keyPressed: sender, requestedForm: formSPP)
-      loadKeys()
-
-    case "thirdPersonPlural":
-      returnConjugation(keyPressed: sender, requestedForm: formTPP)
-      loadKeys()
-
-    case "formTop":
-      returnConjugation(keyPressed: sender, requestedForm: formTop)
-      loadKeys()
-
-    case "formMiddle":
-      returnConjugation(keyPressed: sender, requestedForm: formMiddle)
-      loadKeys()
-
-    case "formBottom":
-      returnConjugation(keyPressed: sender, requestedForm: formBottom)
-      loadKeys()
-
-    case "formTopLeft":
-      if controllerLanguage == "English" && enConjugationState == .present {
-        enConjugationState = .presSimp
-        conjViewShiftButtonsState = .bothInactive
-      } else {
-        returnConjugation(keyPressed: sender, requestedForm: formTopLeft)
-      }
-      loadKeys()
-
-    case "formTopRight":
-      if controllerLanguage == "English" {
-        if enConjugationState == .present {
-          enConjugationState = .presCont
-          conjViewShiftButtonsState = .bothInactive
-        } else if enConjugationState == .past {
-          enConjugationState = .pastCont
-          conjViewShiftButtonsState = .bothInactive
-        } else {
-          returnConjugation(keyPressed: sender, requestedForm: formTopRight)
-        }
-      } else {
-        returnConjugation(keyPressed: sender, requestedForm: formTopRight)
-      }
-      loadKeys()
-
-    case "formBottomLeft":
-      if controllerLanguage == "English" && enConjugationState == .present {
-        enConjugationState = .presPerf
-        conjViewShiftButtonsState = .bothInactive
-      } else {
-        returnConjugation(keyPressed: sender, requestedForm: formBottomLeft)
-      }
-      loadKeys()
-
-    case "formBottomRight":
-      if controllerLanguage == "English" && enConjugationState == .present {
-        enConjugationState = .presPerfCont
-        conjViewShiftButtonsState = .bothInactive
-      } else {
-        returnConjugation(keyPressed: sender, requestedForm: formBottomRight)
-      }
-      loadKeys()
-
-    case "formLeft":
-      returnConjugation(keyPressed: sender, requestedForm: formLeft)
-      loadKeys()
-
-    case "formRight":
-      returnConjugation(keyPressed: sender, requestedForm: formRight)
-      loadKeys()
 
     case "AutoAction0":
       executeAutoAction(keyPressed: translateKey)

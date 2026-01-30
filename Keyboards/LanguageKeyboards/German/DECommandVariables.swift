@@ -1,23 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-/**
- * Variables associated with commands for the German Scribe keyboard.
- */
-
-func deSetConjugationLabels() {
-  // Reset all form labels prior to assignment.
-  for k in formLabelsDict.keys {
-    formLabelsDict[k] = ""
-  }
-
-  formLabelsDict["FPS"] = "ich"
-  formLabelsDict["SPS"] = "du"
-  formLabelsDict["TPS"] = "er/sie/es"
-  formLabelsDict["FPP"] = "wir"
-  formLabelsDict["SPP"] = "ihr"
-  formLabelsDict["TPP"] = "sie/Sie"
-}
-
 func deSetCaseDeclensionLabels() {
   // Reset all form labels prior to assignment.
   for k in formLabelsDict.keys {
@@ -71,13 +53,6 @@ func deSetCaseDeclensionLabels() {
       formLabelsDict["BR"] = "PL"
     }
   }
-}
-
-/// What the conjugation state is for the conjugate feature.
-enum DEConjugationState {
-  case indicativePresent
-  case indicativePreterite
-  case indicativePerfect
 }
 
 /// What the conjugation state is for the case conjugate feature.
@@ -143,26 +118,8 @@ enum DECaseVariantDeclensionState {
   case genitivePossessiveTPP
 }
 
-var deConjugationState: DEConjugationState = .indicativePresent
 var deCaseDeclensionState: DECaseDeclensionState = .accusativeDefinite
 var deCaseVariantDeclensionState: DECaseVariantDeclensionState = .disabled
-
-/// Sets the title of the command bar when the keyboard is in conjugate mode.
-func deGetConjugationTitle() -> String {
-  if inputWordIsCapitalized {
-    verbToDisplay = verbToConjugate.capitalized
-  } else {
-    verbToDisplay = verbToConjugate
-  }
-  switch deConjugationState {
-  case .indicativePresent:
-    return commandPromptSpacing + "Präsens: " + verbToDisplay
-  case .indicativePreterite:
-    return commandPromptSpacing + "Präteritum: " + verbToDisplay
-  case .indicativePerfect:
-    return commandPromptSpacing + "Perfekt: " + verbToDisplay
-  }
-}
 
 /// Sets the title of the command bar when the keyboard is in conjugate mode.
 func deGetCaseDeclensionTitle() -> String {
@@ -222,18 +179,6 @@ func deGetCaseDeclensionTitle() -> String {
          .genitivePossessiveFPP, .genitivePossessiveSPP, .genitivePossessiveTPP:
       return commandPromptSpacing + "Geschlecht des Objekts?"
     }
-  }
-}
-
-/// Returns the appropriate key in the verbs dictionary to access conjugations.
-func deGetConjugationState() -> String {
-  switch deConjugationState {
-  case .indicativePresent:
-    return "pres"
-  case .indicativePreterite:
-    return "pret"
-  case .indicativePerfect:
-    return "perf"
   }
 }
 
@@ -536,17 +481,6 @@ func deConjugationStateLeft() {
       conjViewShiftButtonsState = .bothActive
       deCaseDeclensionState = .genitivePossessive
     }
-  } else {
-    switch deConjugationState {
-    case .indicativePresent:
-      break
-    case .indicativePreterite:
-      conjViewShiftButtonsState = .leftInactive
-      deConjugationState = .indicativePresent
-    case .indicativePerfect:
-      conjViewShiftButtonsState = .bothActive
-      deConjugationState = .indicativePreterite
-    }
   }
 }
 
@@ -597,17 +531,6 @@ func deConjugationStateRight() {
       conjViewShiftButtonsState = .rightInactive
       deCaseDeclensionState = .genitiveDemonstrative
     case .genitiveDemonstrative:
-      break
-    }
-  } else {
-    switch deConjugationState {
-    case .indicativePresent:
-      conjViewShiftButtonsState = .bothActive
-      deConjugationState = .indicativePreterite
-    case .indicativePreterite:
-      conjViewShiftButtonsState = .rightInactive
-      deConjugationState = .indicativePerfect
-    case .indicativePerfect:
       break
     }
   }
