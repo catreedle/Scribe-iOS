@@ -201,14 +201,15 @@ func triggerVerbConjugation(commandBar: UILabel) -> Bool {
 func isVerbInConjugationTable(queriedVerbToConjugate: String) -> Bool {
   verbToConjugate = String(queriedVerbToConjugate.trailingSpacesTrimmed)
 
-  // Check to see if the input was uppercase to return an uppercase conjugation.
   let firstLetter = verbToConjugate.substring(toIdx: 1)
   inputWordIsCapitalized = firstLetter.isUppercase
   verbToConjugate = verbToConjugate.lowercased()
 
-  let verbInTable = LanguageDBManager.shared.queryVerb(of: verbToConjugate)[0]
+  // Try to query any conjugation form to verify verb exists
+  let columnName = (controllerLanguage == "Swedish") ? "verb" : "infinitive"
+  let results = LanguageDBManager.shared.queryVerb(of: verbToConjugate, with: [columnName])
 
-  return verbToConjugate == verbInTable
+  return !results.isEmpty && !results[0].isEmpty
 }
 
 /// Returns a conjugation once a user presses a key in the conjugateView or triggers a declension.

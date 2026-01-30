@@ -2012,6 +2012,9 @@ class KeyboardViewController: UIInputViewController {
 
   /// Loads the keys given the current constraints.
   func loadKeys() {
+    if commandState == .dynamicConjugation {
+        return
+    }
     // The name of the language keyboard that's referencing KeyboardViewController.
     controllerLanguage = classForCoder.description().components(separatedBy: ".KeyboardViewController")[0]
     if let userDefaults = UserDefaults(suiteName: "group.be.scri.userDefaultsContainer") {
@@ -2368,7 +2371,18 @@ class KeyboardViewController: UIInputViewController {
           .conjugate,
           .selectVerbConjugation,
           .selectCaseDeclension,
-          .plural].contains(commandState) { // escape
+          .plural,
+          .dynamicConjugation].contains(commandState) { // escape
+
+        // If closing dynamic conjugation, remove the view
+        if commandState == .dynamicConjugation {
+          children.forEach { child in
+            if child is DynamicConjugationViewController {
+              child.removeFromParent()
+              child.view.removeFromSuperview()
+            }
+          }
+        }
         commandState = .idle
         deCaseVariantDeclensionState = .disabled
       } else if [.idle, .alreadyPlural, .invalid].contains(commandState) { // ScribeKey
@@ -2398,8 +2412,10 @@ class KeyboardViewController: UIInputViewController {
         resetVerbConjugationState()
         let conjugationTblTriggered = triggerVerbConjugation(commandBar: commandBar)
         if conjugationTblTriggered {
-          commandState = .selectVerbConjugation
-          loadKeys() // go to conjugation view
+        //   commandState = .selectVerbConjugation
+        //   loadKeys() // go to conjugation view
+          commandState = .dynamicConjugation
+          showDynamicConjugationView(verb: verbToConjugate)
           return
         } else {
           commandState = .invalid
@@ -2463,11 +2479,11 @@ class KeyboardViewController: UIInputViewController {
 
     case "Conjugate":
       if let selectedText = proxy.selectedText {
-        resetVerbConjugationState()
         let verbInTable = isVerbInConjugationTable(queriedVerbToConjugate: selectedText)
         if verbInTable {
-          commandState = .selectVerbConjugation
-          loadKeys() // go to conjugation view
+          commandState = .dynamicConjugation
+          // NEW: Show dynamic conjugation view instead of old hardcoded one
+          showDynamicConjugationView(verb: verbToConjugate)
           return
         } else {
           commandState = .invalid
@@ -2966,6 +2982,35 @@ class KeyboardViewController: UIInputViewController {
     } else {
       sender.backgroundColor = keyPressedColor
     }
+  }
+
+  func showDynamicConjugationView(verb: String) {
+      // Remove any existing conjugation view
+      children.forEach { child in
+          if child is DynamicConjugationViewController {
+              child.removeFromParent()
+              child.view.removeFromSuperview()
+          }
+      }
+
+      let conjugationVC = DynamicConjugationViewController(
+          verb: verb,
+          language: languagesAbbrDict[controllerLanguage] ?? "",
+          commandBar: commandBar
+      )
+
+      addChild(conjugationVC)
+
+      // Position below the command bar
+      conjugationVC.view.frame = CGRect(
+          x: 0,
+          y: commandBar.frame.maxY,
+          width: view.bounds.width,
+          height: view.bounds.height - commandBar.frame.maxY
+      )
+
+      view.addSubview(conjugationVC.view)
+      conjugationVC.didMove(toParent: self)
   }
 
   /// Defines events that occur given multiple presses of a single key.
