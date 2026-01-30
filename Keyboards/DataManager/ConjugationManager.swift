@@ -82,6 +82,7 @@ class ConjugationManager {
     let mainColumn = columnName.replacingOccurrences(of: pattern, with: "", options: .regularExpression)
       .trimmingCharacters(in: .whitespaces)
 
+    // Get the main verb form (e.g., "gegangen")
     guard let mainForm = LanguageDBManager.shared.queryVerb(of: verb, with: [mainColumn]).first,
           !mainForm.isEmpty else {
       return ""
@@ -90,16 +91,29 @@ class ConjugationManager {
     // Check if it's dynamic lookup (German style: "indicativePresentFirstPersonSingular auxiliaryVerb")
     let auxWords = auxiliaryPart.split(separator: " ")
     if auxWords.count > 1 {
-      // Last word is the auxiliary verb column
-      let auxColumn = String(auxWords.last!)
-      let targetForm = String(auxWords.first!)
+      let targetForm = String(auxWords.first!)  // e.g., "indicativePresentFirstPersonSingular"
+      let auxColumn = String(auxWords.last!)    // e.g., "auxiliaryVerb"
 
       // Get the auxiliary verb identifier
       if let auxVerbId = LanguageDBManager.shared.queryVerb(of: verb, with: [auxColumn]).first,
          !auxVerbId.isEmpty {
-        // Query the conjugated auxiliary
-        if let auxConjugated = LanguageDBManager.shared.queryVerb(of: auxVerbId, with: [targetForm]).first,
-           !auxConjugated.isEmpty {
+
+        // Try querying by wdLexemeId first
+        var auxConjugated = LanguageDBManager.shared.queryVerb(
+          of: auxVerbId,
+          identifierColumn: "wdLexemeId",
+          with: [targetForm]
+        ).first
+
+        // Fallback: try by infinitive
+        if auxConjugated?.isEmpty ?? true {
+          auxConjugated = LanguageDBManager.shared.queryVerb(
+            of: auxVerbId,
+            with: [targetForm]
+          ).first
+        }
+
+        if let auxConjugated = auxConjugated, !auxConjugated.isEmpty {
           return "\(auxConjugated) \(mainForm)"
         }
       }
